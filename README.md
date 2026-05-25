@@ -51,7 +51,7 @@ npm run preview
 
 ### plan B
 
-####下载项目到本地后，点击start.bat。
+下载项目到本地后，点击start.bat。
 
 
 ## AI 诗境生成
