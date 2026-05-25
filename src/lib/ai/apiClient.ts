@@ -3,12 +3,12 @@ import type { AiApiConfig, PanoramaGameConfig } from '../../types/game';
 const STORAGE_PREFIX = 'dream-li-bai-ai-';
 
 const DEFAULTS = {
-  imageEndpoint: 'https://www.codexapis.com/v1/images/generations',
-  imageKey: 'sk-FAAcegzQgQsPgYJjGgj1VkS2XWu4Cf9KjVQWlI9ulPEPRw2H',
-  imageModel: 'gpt-image-2',
-  llmEndpoint: 'https://token-plan-cn.xiaomimimo.com/v1/chat/completions',
-  llmKey: 'tp-ctr0qevshqqhtz4f5h9tw286wfdt1h2lyfy48bf870hv6xc3',
-  llmModel: 'mimo-v2.5',
+  imageEndpoint: import.meta.env.VITE_IMAGE_ENDPOINT || 'https://www.codexapis.com/v1/images/generations',
+  imageKey: import.meta.env.VITE_IMAGE_API_KEY || '',
+  imageModel: import.meta.env.VITE_IMAGE_MODEL || 'gpt-image-2',
+  llmEndpoint: import.meta.env.VITE_LLM_ENDPOINT || 'https://token-plan-cn.xiaomimimo.com/v1/chat/completions',
+  llmKey: import.meta.env.VITE_LLM_API_KEY || '',
+  llmModel: import.meta.env.VITE_LLM_MODEL || 'mimo-v2.5',
   llmMaxTokens: 32768,
 };
 
