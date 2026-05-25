@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# macOS metadata
+__MACOSX/
+._*
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript build artifacts
+vite.config.js
+vite.config.d.ts
+
+# Playwright
+test-results/
+playwright-report/
+
+# Claude Code local settings
+.claude/
+
+# Debug artifacts
+artifacts/

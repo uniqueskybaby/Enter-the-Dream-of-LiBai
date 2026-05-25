@@ -1,0 +1,66 @@
+[
+  {
+    "gameId": "dream_li_bai_lushan_v1",
+    "title": "入梦李白：望庐山瀑布",
+    "poemLine": "飞流直下三千尺，疑是银河落九天。",
+    "source": "望庐山瀑布",
+    "worldName": "庐山银河梦境",
+    "configUrl": "/data/dream_li_bai_lushan_v1.json",
+    "coverUrl": "/assets/ui/cover-lushan.jpg",
+    "theme": "蓝银月光"
+  },
+  {
+    "gameId": "dream_li_bai_moon_three_v1",
+    "title": "入梦李白：月下独酌",
+    "poemLine": "举杯邀明月，对影成三人。",
+    "source": "月下独酌·其一",
+    "worldName": "月影三人梦境",
+    "configUrl": "/data/dream_li_bai_moon_three_v1.json",
+    "coverUrl": "/assets/panoramas/moon_three_main_4096x2048.jpg",
+    "theme": "月银酒金"
+  },
+  {
+    "gameId": "dream_li_bai_yellow_river_v1",
+    "title": "入梦李白：将进酒",
+    "poemLine": "黄河之水天上来，奔流到海不复回。",
+    "source": "将进酒",
+    "worldName": "黄河天海梦境",
+    "configUrl": "/data/dream_li_bai_yellow_river_v1.json",
+    "coverUrl": "/assets/panoramas/yellow_river_main_4096x2048.jpg",
+    "theme": "金涛天水"
+  },
+  {
+    "gameId": "dream_li_bai_yangtze_farewell_v1",
+    "title": "入梦李白：黄鹤楼送孟浩然之广陵",
+    "poemLine": "孤帆远影碧空尽，惟见长江天际流。",
+    "source": "黄鹤楼送孟浩然之广陵",
+    "worldName": "长江天际梦境",
+    "configUrl": "/data/dream_li_bai_yangtze_farewell_v1.json",
+    "coverUrl": "/assets/panoramas/yangtze_farewell_main_4096x2048.jpg",
+    "theme": "青碧送别"
+  },
+  {
+    "gameId": "dream_generated_changsha_1925",
+    "title": "入梦沁园春：问苍茫大地",
+    "poemLine": "问苍茫大地谁主沉浮",
+    "source": "沁园春·长沙",
+    "worldName": "橘子洲头，秋水长天",
+    "configUrl": "/data/dream_generated_changsha_1925.json",
+    "coverUrl": "/assets/panoramas/dream_generated_changsha_1925_main_scene.png",
+    "theme": "玩家AI生成",
+    "origin": "player-ai",
+    "savedAt": "2026-05-24T08:49:10.818Z"
+  },
+  {
+    "gameId": "dream_generated_silver_saddle_meteor",
+    "title": "入梦李白：侠客行",
+    "poemLine": "银鞍照白马，飒沓如流星。",
+    "source": "侠客行",
+    "worldName": "流星侠客境",
+    "configUrl": "/data/dream_generated_silver_saddle_meteor.json",
+    "coverUrl": "/assets/panoramas/dream_generated_silver_saddle_meteor_main_scene.png",
+    "theme": "玩家AI生成",
+    "origin": "player-ai",
+    "savedAt": "2026-05-24T15:08:36.294Z"
+  }
+]
