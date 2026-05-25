@@ -32,7 +32,7 @@
 - Lucide React (图标)
 
 ## 快速开始
-
+# plan A
 ```bash
 # 安装依赖
 npm install
@@ -46,6 +46,11 @@ npm run build
 # 预览构建产物
 npm run preview
 ```
+
+# plan B
+
+#下载项目到本地后，点击start.bat。
+
 
 ## AI 诗境生成
 
