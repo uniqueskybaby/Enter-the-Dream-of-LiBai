@@ -1,13 +1,50 @@
 import type { DreamManifestEntry, PanoramaGameConfig } from '../types/game';
 
-const DEFAULT_CONFIG_URL = '/data/dream_li_bai_lushan_v1.json';
+const PUBLIC_BASE_URL = import.meta.env.BASE_URL || '/';
+
+function publicUrl(path: string): string {
+  if (/^(https?:|data:|blob:|local:\/\/)/i.test(path)) return path;
+  if (path.startsWith('./') || path.startsWith('../')) return path;
+
+  const base = PUBLIC_BASE_URL.endsWith('/') ? PUBLIC_BASE_URL : `${PUBLIC_BASE_URL}/`;
+  return `${base}${path.replace(/^\/+/, '')}`;
+}
+
+function resolveManifestPublicUrls(dream: DreamManifestEntry): DreamManifestEntry {
+  return {
+    ...dream,
+    configUrl: publicUrl(dream.configUrl),
+    coverUrl: publicUrl(dream.coverUrl),
+  };
+}
+
+function resolveConfigPublicUrls(config: PanoramaGameConfig): PanoramaGameConfig {
+  return {
+    ...config,
+    nodes: config.nodes.map((node) => ({
+      ...node,
+      panoramaUrl: publicUrl(node.panoramaUrl),
+    })),
+    endings: Object.fromEntries(
+      Object.entries(config.endings).map(([id, ending]) => [
+        id,
+        {
+          ...ending,
+          imageUrl: ending.imageUrl ? publicUrl(ending.imageUrl) : ending.imageUrl,
+        },
+      ]),
+    ),
+  };
+}
+
+const DEFAULT_CONFIG_URL = publicUrl('/data/dream_li_bai_lushan_v1.json');
 const GENERATED_DREAMS_KEY = 'dream-li-bai-generated-dreams';
 const GENERATED_CONFIG_URL_PREFIX = 'local://generated-dream/';
-const FALLBACK_COVER_URL = '/assets/ui/cover-lushan.jpg';
-const FALLBACK_PANORAMA_URL = '/assets/panoramas/lushan_main_4096x2048.jpg';
-const MOON_FALLBACK_PANORAMA_URL = '/assets/panoramas/moon_three_main_4096x2048.jpg';
-const YELLOW_RIVER_FALLBACK_PANORAMA_URL = '/assets/panoramas/yellow_river_main_4096x2048.jpg';
-const YANGTZE_FALLBACK_PANORAMA_URL = '/assets/panoramas/yangtze_farewell_main_4096x2048.jpg';
+const FALLBACK_COVER_URL = publicUrl('/assets/ui/cover-lushan.jpg');
+const FALLBACK_PANORAMA_URL = publicUrl('/assets/panoramas/lushan_main_4096x2048.jpg');
+const MOON_FALLBACK_PANORAMA_URL = publicUrl('/assets/panoramas/moon_three_main_4096x2048.jpg');
+const YELLOW_RIVER_FALLBACK_PANORAMA_URL = publicUrl('/assets/panoramas/yellow_river_main_4096x2048.jpg');
+const YANGTZE_FALLBACK_PANORAMA_URL = publicUrl('/assets/panoramas/yangtze_farewell_main_4096x2048.jpg');
 export const PLAYER_AI_DREAM_LABEL = '玩家AI生成';
 
 interface StoredGeneratedDream {
@@ -23,7 +60,7 @@ const fallbackManifest: DreamManifestEntry[] = [
     source: '望庐山瀑布',
     worldName: '庐山银河梦境',
     configUrl: DEFAULT_CONFIG_URL,
-    coverUrl: '/assets/ui/cover-lushan.jpg',
+    coverUrl: FALLBACK_COVER_URL,
     theme: '蓝银月光',
     origin: 'built-in',
   },
@@ -33,11 +70,11 @@ export async function loadDreamManifest(): Promise<DreamManifestEntry[]> {
   let manifest = fallbackManifest;
 
   try {
-    const response = await fetch('/data/dreams_manifest.json');
+    const response = await fetch(publicUrl('/data/dreams_manifest.json'));
     if (response.ok) {
       const remoteManifest = (await response.json()) as DreamManifestEntry[];
       manifest = remoteManifest.length > 0
-        ? remoteManifest.map((dream) => ({ ...dream, origin: dream.origin ?? 'built-in' }))
+        ? remoteManifest.map((dream) => resolveManifestPublicUrls({ ...dream, origin: dream.origin ?? 'built-in' }))
         : fallbackManifest;
     }
   } catch {
@@ -62,7 +99,9 @@ export async function loadGameConfig(gameIdOrUrl?: string): Promise<PanoramaGame
   let configUrl = DEFAULT_CONFIG_URL;
 
   if (gameIdOrUrl?.startsWith('/')) {
-    configUrl = gameIdOrUrl;
+    configUrl = publicUrl(gameIdOrUrl);
+  } else if (gameIdOrUrl && (gameIdOrUrl.startsWith('./') || gameIdOrUrl.startsWith('../') || /^https?:/i.test(gameIdOrUrl))) {
+    configUrl = publicUrl(gameIdOrUrl);
   } else if (gameIdOrUrl) {
     const manifest = await loadDreamManifest();
     configUrl = manifest.find((dream) => dream.gameId === gameIdOrUrl)?.configUrl ?? DEFAULT_CONFIG_URL;
@@ -74,7 +113,7 @@ export async function loadGameConfig(gameIdOrUrl?: string): Promise<PanoramaGame
     throw new Error(`加载梦境配置失败：${response.status}`);
   }
 
-  return (await response.json()) as PanoramaGameConfig;
+  return resolveConfigPublicUrls((await response.json()) as PanoramaGameConfig);
 }
 
 export async function saveGeneratedDreamConfig(config: PanoramaGameConfig): Promise<PanoramaGameConfig> {
@@ -122,7 +161,9 @@ function loadGeneratedDreamManifest(): DreamManifestEntry[] {
 
 function loadGeneratedDreamConfig(gameId: string): PanoramaGameConfig | undefined {
   const stored = readGeneratedDreams().find((dream) => dream.config.gameId === gameId);
-  return stored ? repairGeneratedFallbackImages(tagGeneratedConfig(cloneConfig(stored.config), stored.savedAt || stored.config.meta?.savedAt || '')) : undefined;
+  return stored
+    ? resolveConfigPublicUrls(repairGeneratedFallbackImages(tagGeneratedConfig(cloneConfig(stored.config), stored.savedAt || stored.config.meta?.savedAt || '')))
+    : undefined;
 }
 
 function manifestEntryFromConfig(config: PanoramaGameConfig, savedAt?: string): DreamManifestEntry {
