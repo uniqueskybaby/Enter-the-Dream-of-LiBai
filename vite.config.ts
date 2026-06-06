@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { localDreamsPlugin } from './vite.local-dreams-plugin.mjs';
 
 export default defineConfig({
+  base: './',
   plugins: [react(), localDreamsPlugin()],
   server: {
     port: 5173,
