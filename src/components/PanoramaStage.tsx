@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Compass } from 'lucide-react';
 import type { HotspotConfig, PanoramaNode, ViewState } from '../types/game';
 import { clampPitch, findHotspotNearView } from '../lib/geometry';
 import { PannellumAdapter } from '../lib/viewer/PannellumAdapter';
@@ -17,6 +18,32 @@ interface PanoramaStageProps {
   foundHiddenIds?: string[];
   hiddenHotspots?: HiddenHotspotDef[];
   isMainScene?: boolean;
+}
+
+type MotionControlState = 'unsupported' | 'idle' | 'requesting' | 'calibrating' | 'active' | 'denied';
+type DeviceOrientationPermission = 'default' | 'denied' | 'granted';
+type DeviceOrientationEventConstructor = typeof DeviceOrientationEvent & {
+  requestPermission?: () => Promise<DeviceOrientationPermission>;
+};
+
+interface MotionBaseline {
+  alpha: number;
+  beta: number;
+  yaw: number;
+  pitch: number;
+}
+
+function getDeviceOrientationConstructor(): DeviceOrientationEventConstructor | undefined {
+  if (typeof DeviceOrientationEvent === 'undefined') return undefined;
+  return DeviceOrientationEvent as DeviceOrientationEventConstructor;
+}
+
+function supportsDeviceOrientation(): boolean {
+  return Boolean(getDeviceOrientationConstructor());
+}
+
+function normalizeAngle(angle: number): number {
+  return ((angle + 540) % 360) - 180;
 }
 
 export function PanoramaStage({
@@ -42,8 +69,15 @@ export function PanoramaStage({
   const hotspotCycleRef = useRef(0);
   const dwellTimerRef = useRef<number | null>(null);
   const dwellTargetRef = useRef<string | null>(null);
+  const motionBaselineRef = useRef<MotionBaseline | null>(null);
+  const motionViewRef = useRef<ViewState | null>(null);
+  const motionFrameRef = useRef<number | null>(null);
+  const pendingMotionViewRef = useRef<ViewState | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [revealedHidden, setRevealedHidden] = useState<string[]>([]);
+  const [motionControl, setMotionControl] = useState<MotionControlState>(() => (
+    supportsDeviceOrientation() ? 'idle' : 'unsupported'
+  ));
 
   useEffect(() => {
     nodeRef.current = node;
@@ -83,6 +117,12 @@ export function PanoramaStage({
     adapterRef.current?.loadScene(node, { mode: 'no-direct-flash' }).then(() => {
       hotspotIdsRef.current = node.hotspots.map((hotspot) => hotspot.id);
     });
+  }, [node.id]);
+
+  useEffect(() => {
+    motionBaselineRef.current = null;
+    motionViewRef.current = null;
+    pendingMotionViewRef.current = null;
   }, [node.id]);
 
   useEffect(() => {
@@ -203,10 +243,109 @@ export function PanoramaStage({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onHotspotClick, onTogglePanel, onToggleSound, onCloseModal]);
 
+  useEffect(() => {
+    if (motionControl !== 'active' && motionControl !== 'calibrating') return;
+
+    const applyMotionView = () => {
+      const adapter = adapterRef.current;
+      const nextView = pendingMotionViewRef.current;
+      motionFrameRef.current = null;
+      pendingMotionViewRef.current = null;
+      if (!adapter || lockedRef.current || !nextView) return;
+      adapter.setView(nextView);
+    };
+
+    const scheduleMotionView = (nextView: ViewState) => {
+      pendingMotionViewRef.current = nextView;
+      if (motionFrameRef.current !== null) return;
+      motionFrameRef.current = window.requestAnimationFrame(applyMotionView);
+    };
+
+    const handleDeviceOrientation = (event: DeviceOrientationEvent) => {
+      const adapter = adapterRef.current;
+      if (!adapter || lockedRef.current || event.alpha === null || event.beta === null) return;
+
+      const currentView = adapter.getView();
+      if (!motionBaselineRef.current) {
+        motionBaselineRef.current = {
+          alpha: event.alpha,
+          beta: event.beta,
+          yaw: currentView.yaw,
+          pitch: currentView.pitch,
+        };
+        motionViewRef.current = currentView;
+        setMotionControl('active');
+        return;
+      }
+
+      const baseline = motionBaselineRef.current;
+      const yawDelta = normalizeAngle(event.alpha - baseline.alpha);
+      const pitchDelta = (baseline.beta - event.beta) * 0.7;
+      const targetView: ViewState = {
+        yaw: baseline.yaw + yawDelta,
+        pitch: clampPitch(baseline.pitch + pitchDelta),
+        fov: currentView.fov,
+      };
+
+      const previousView = motionViewRef.current ?? currentView;
+      const smoothedView: ViewState = {
+        yaw: previousView.yaw + normalizeAngle(targetView.yaw - previousView.yaw) * 0.22,
+        pitch: previousView.pitch + (targetView.pitch - previousView.pitch) * 0.22,
+        fov: currentView.fov,
+      };
+      motionViewRef.current = smoothedView;
+      scheduleMotionView(smoothedView);
+    };
+
+    window.addEventListener('deviceorientation', handleDeviceOrientation, { passive: true });
+    return () => {
+      window.removeEventListener('deviceorientation', handleDeviceOrientation);
+      if (motionFrameRef.current !== null) {
+        window.cancelAnimationFrame(motionFrameRef.current);
+        motionFrameRef.current = null;
+      }
+      pendingMotionViewRef.current = null;
+    };
+  }, [motionControl]);
+
+  const toggleMotionControl = async () => {
+    if (motionControl === 'active' || motionControl === 'calibrating') {
+      motionBaselineRef.current = null;
+      motionViewRef.current = null;
+      setMotionControl('idle');
+      return;
+    }
+
+    const DeviceOrientation = getDeviceOrientationConstructor();
+    if (!DeviceOrientation) {
+      setMotionControl('unsupported');
+      return;
+    }
+
+    setMotionControl('requesting');
+    try {
+      if (typeof DeviceOrientation.requestPermission === 'function') {
+        const permission = await DeviceOrientation.requestPermission();
+        if (permission !== 'granted') {
+          setMotionControl('denied');
+          return;
+        }
+      }
+      motionBaselineRef.current = null;
+      motionViewRef.current = null;
+      setMotionControl('calibrating');
+    } catch {
+      setMotionControl('denied');
+    }
+  };
+
   return (
     <div className="panorama-stage" aria-label={node.title}>
       <div ref={containerRef} className="panorama-stage__viewer" />
       <Crosshair hotspots={node.hotspots} />
+      {motionControl !== 'unsupported' && (
+        <MotionControlButton state={motionControl} onClick={toggleMotionControl} />
+      )}
       {showHelp && <KeyboardHelp onClose={() => setShowHelp(false)} />}
     </div>
   );
@@ -218,6 +357,36 @@ function Crosshair({ hotspots }: { hotspots: HotspotConfig[] }) {
     <div className={`crosshair ${hasAvailable ? 'is-awake' : ''}`} aria-hidden="true">
       <span />
     </div>
+  );
+}
+
+function MotionControlButton({ state, onClick }: { state: Exclude<MotionControlState, 'unsupported'>; onClick: () => void }) {
+  const active = state === 'active' || state === 'calibrating';
+  const labels: Record<Exclude<MotionControlState, 'unsupported'>, string> = {
+    idle: '体感',
+    requesting: '授权',
+    calibrating: '校准',
+    active: '体感',
+    denied: '受限',
+  };
+  const title = state === 'denied'
+    ? '传感器权限未开启'
+    : active
+      ? '关闭手机体感控制'
+      : '开启手机体感控制';
+
+  return (
+    <button
+      className={`motion-button ${active ? 'is-active' : ''} ${state === 'denied' ? 'is-denied' : ''}`}
+      type="button"
+      aria-label={title}
+      title={title}
+      disabled={state === 'requesting'}
+      onClick={onClick}
+    >
+      <Compass size={22} />
+      <span>{labels[state]}</span>
+    </button>
   );
 }
 

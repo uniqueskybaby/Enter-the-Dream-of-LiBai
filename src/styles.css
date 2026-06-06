@@ -269,7 +269,8 @@ img {
 }
 
 .round-actions button,
-.sound-button {
+.sound-button,
+.motion-button {
   width: 66px;
   min-height: 80px;
   display: grid;
@@ -285,12 +286,14 @@ img {
 }
 
 .round-actions svg,
-.sound-button svg {
+.sound-button svg,
+.motion-button svg {
   color: var(--gold-bright);
 }
 
 .round-actions span,
-.sound-button span {
+.sound-button span,
+.motion-button span {
   display: block;
   font-size: 0.86rem;
   white-space: nowrap;
@@ -652,6 +655,35 @@ img {
   z-index: 6;
   top: 118px;
   right: 42px;
+}
+
+.motion-button {
+  position: absolute;
+  z-index: 6;
+  top: 208px;
+  right: 42px;
+}
+
+.motion-button.is-active {
+  border-color: rgba(146, 222, 196, 0.7);
+  background: rgba(23, 72, 76, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(146, 222, 196, 0.18),
+    0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+.motion-button.is-active svg {
+  color: var(--jade);
+}
+
+.motion-button.is-denied {
+  border-color: rgba(189, 89, 79, 0.55);
+  color: rgba(247, 230, 191, 0.78);
+}
+
+.motion-button:disabled {
+  cursor: wait;
+  opacity: 0.78;
 }
 
 .side-journal {
@@ -1932,6 +1964,13 @@ img {
 
   .sound-button {
     top: 96px;
+    right: 14px;
+    width: 58px;
+    min-height: 64px;
+  }
+
+  .motion-button {
+    top: 14px;
     right: 14px;
     width: 58px;
     min-height: 64px;
