@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { BookOpen, CircleHelp, Gem, Map, Moon, Package, ScrollText, Settings, Sparkles } from 'lucide-react';
 import { PLAYER_AI_DREAM_LABEL } from '../lib/config';
 import type { DreamManifestEntry, PanoramaGameConfig, PlayerResources } from '../types/game';
@@ -35,11 +36,18 @@ export function HomeScreen({
   onOpenAi,
   onSelectDream,
 }: HomeScreenProps) {
+  const [loadDeferredThumbs, setLoadDeferredThumbs] = useState(false);
   const dreamPower = resources.moonlight + resources.scroll * 6 + resources.gem * 120 + savedResultCount * 280 + achievementCount * 160;
   const level = Math.max(1, Math.floor(dreamPower / 2400) + 1);
   const progress = dreamPower > 0 && dreamPower % 2400 === 0 ? 2400 : dreamPower % 2400;
   const activeDream = dreams.find((dream) => dream.gameId === config.gameId);
   const backdropUrl = activeDream?.coverUrl ?? config.nodes.find((node) => node.id === config.startNodeId)?.panoramaUrl ?? config.nodes[0]?.panoramaUrl;
+
+  useEffect(() => {
+    setLoadDeferredThumbs(false);
+    const timer = window.setTimeout(() => setLoadDeferredThumbs(true), 1800);
+    return () => window.clearTimeout(timer);
+  }, [config.gameId, dreams.length]);
 
   return (
     <section className="home-screen">
@@ -107,7 +115,7 @@ export function HomeScreen({
                 isPlayerAiDream(dream) ? 'is-player-ai' : '',
               ].filter(Boolean).join(' ')}
               onClick={() => onSelectDream(dream.gameId)}
-              style={{ backgroundImage: `url(${dream.coverUrl})` }}
+              style={(dream.gameId === config.gameId || loadDeferredThumbs) ? { backgroundImage: `url(${dream.coverUrl})` } : undefined}
             >
               <span className={isPlayerAiDream(dream) ? 'dream-origin-badge' : undefined}>
                 {isPlayerAiDream(dream) ? PLAYER_AI_DREAM_LABEL : dream.theme}

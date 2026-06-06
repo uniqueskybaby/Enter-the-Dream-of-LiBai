@@ -1,20 +1,68 @@
 import type { DreamManifestEntry, PanoramaGameConfig } from '../types/game';
 
 const PUBLIC_BASE_URL = import.meta.env.BASE_URL || '/';
+const WEBP_PANORAMA_STEMS = new Set([
+  'branch_moon_bridge_4096x2048',
+  'branch_moon_toast_4096x2048',
+  'branch_silent_peak_4096x2048',
+  'lushan_main_4096x2048',
+  'moon_three_main_4096x2048',
+  'moon_three_shadow_4096x2048',
+  'moon_three_silent_4096x2048',
+  'moon_three_toast_4096x2048',
+  'yangtze_farewell_horizon_4096x2048',
+  'yangtze_farewell_main_4096x2048',
+  'yangtze_farewell_pavilion_4096x2048',
+  'yangtze_farewell_sail_4096x2048',
+  'yellow_river_canyon_4096x2048',
+  'yellow_river_main_4096x2048',
+  'yellow_river_sea_4096x2048',
+  'yellow_river_source_4096x2048',
+]);
+
+function splitUrlSuffix(path: string): [string, string] {
+  const suffixIndex = path.search(/[?#]/);
+  return suffixIndex === -1 ? [path, ''] : [path.slice(0, suffixIndex), path.slice(suffixIndex)];
+}
+
+function removePublicBasePrefix(path: string): string {
+  const normalized = `/${path.replace(/^\/+/, '')}`;
+  const base = PUBLIC_BASE_URL.replace(/^\/+|\/+$/g, '');
+  if (!base) return normalized;
+
+  const basePrefix = `/${base}`;
+  return normalized.startsWith(`${basePrefix}/`) ? normalized.slice(basePrefix.length) : normalized;
+}
 
 function publicUrl(path: string): string {
   if (/^(https?:|data:|blob:|local:\/\/)/i.test(path)) return path;
   if (path.startsWith('./') || path.startsWith('../')) return path;
 
   const base = PUBLIC_BASE_URL.endsWith('/') ? PUBLIC_BASE_URL : `${PUBLIC_BASE_URL}/`;
-  return `${base}${path.replace(/^\/+/, '')}`;
+  const [pathOnly, suffix] = splitUrlSuffix(path);
+  const normalized = removePublicBasePrefix(pathOnly);
+  return `${base}${normalized.replace(/^\/+/, '')}${suffix}`;
+}
+
+function optimizedPublicImageUrl(path: string): string {
+  if (!path || /^(https?:|data:|blob:|local:\/\/)/i.test(path)) return path;
+  if (path.startsWith('./') || path.startsWith('../')) return path;
+
+  const [pathOnly, suffix] = splitUrlSuffix(path);
+  const normalized = removePublicBasePrefix(pathOnly);
+  const match = normalized.match(/^\/assets\/panoramas\/([^/]+)\.(?:jpe?g|png)$/i);
+  const optimized = match && WEBP_PANORAMA_STEMS.has(match[1])
+    ? `/assets/panoramas/${match[1]}.webp`
+    : normalized;
+
+  return publicUrl(`${optimized}${suffix}`);
 }
 
 function resolveManifestPublicUrls(dream: DreamManifestEntry): DreamManifestEntry {
   return {
     ...dream,
     configUrl: publicUrl(dream.configUrl),
-    coverUrl: publicUrl(dream.coverUrl),
+    coverUrl: optimizedPublicImageUrl(dream.coverUrl),
   };
 }
 
@@ -23,14 +71,14 @@ function resolveConfigPublicUrls(config: PanoramaGameConfig): PanoramaGameConfig
     ...config,
     nodes: config.nodes.map((node) => ({
       ...node,
-      panoramaUrl: publicUrl(node.panoramaUrl),
+      panoramaUrl: optimizedPublicImageUrl(node.panoramaUrl),
     })),
     endings: Object.fromEntries(
       Object.entries(config.endings).map(([id, ending]) => [
         id,
         {
           ...ending,
-          imageUrl: ending.imageUrl ? publicUrl(ending.imageUrl) : ending.imageUrl,
+          imageUrl: ending.imageUrl ? optimizedPublicImageUrl(ending.imageUrl) : ending.imageUrl,
         },
       ]),
     ),
@@ -41,10 +89,10 @@ const DEFAULT_CONFIG_URL = publicUrl('/data/dream_li_bai_lushan_v1.json');
 const GENERATED_DREAMS_KEY = 'dream-li-bai-generated-dreams';
 const GENERATED_CONFIG_URL_PREFIX = 'local://generated-dream/';
 const FALLBACK_COVER_URL = publicUrl('/assets/ui/cover-lushan.jpg');
-const FALLBACK_PANORAMA_URL = publicUrl('/assets/panoramas/lushan_main_4096x2048.jpg');
-const MOON_FALLBACK_PANORAMA_URL = publicUrl('/assets/panoramas/moon_three_main_4096x2048.jpg');
-const YELLOW_RIVER_FALLBACK_PANORAMA_URL = publicUrl('/assets/panoramas/yellow_river_main_4096x2048.jpg');
-const YANGTZE_FALLBACK_PANORAMA_URL = publicUrl('/assets/panoramas/yangtze_farewell_main_4096x2048.jpg');
+const FALLBACK_PANORAMA_URL = optimizedPublicImageUrl('/assets/panoramas/lushan_main_4096x2048.jpg');
+const MOON_FALLBACK_PANORAMA_URL = optimizedPublicImageUrl('/assets/panoramas/moon_three_main_4096x2048.jpg');
+const YELLOW_RIVER_FALLBACK_PANORAMA_URL = optimizedPublicImageUrl('/assets/panoramas/yellow_river_main_4096x2048.jpg');
+const YANGTZE_FALLBACK_PANORAMA_URL = optimizedPublicImageUrl('/assets/panoramas/yangtze_farewell_main_4096x2048.jpg');
 export const PLAYER_AI_DREAM_LABEL = '玩家AI生成';
 
 interface StoredGeneratedDream {
