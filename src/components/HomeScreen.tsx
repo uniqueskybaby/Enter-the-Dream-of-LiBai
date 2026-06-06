@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BookOpen, CircleHelp, Gem, Map, Moon, Package, ScrollText, Settings, Sparkles } from 'lucide-react';
-import { PLAYER_AI_DREAM_LABEL } from '../lib/config';
+import { PLAYER_AI_DREAM_LABEL, publicAssetUrl } from '../lib/config';
 import type { DreamManifestEntry, PanoramaGameConfig, PlayerResources } from '../types/game';
 import type { PanelKind } from './InfoPanel';
 
@@ -24,6 +24,8 @@ function formatNum(value: number): string {
 function isPlayerAiDream(dream: DreamManifestEntry): boolean {
   return dream.origin === 'player-ai' || dream.theme === PLAYER_AI_DREAM_LABEL || dream.gameId.startsWith('dream_generated');
 }
+
+const LIBAI_AVATAR_URL = publicAssetUrl('/assets/ui/libai-avatar.jpg');
 
 export function HomeScreen({
   config,
@@ -60,7 +62,7 @@ export function HomeScreen({
 
       <header className="home-topbar" aria-label="玩家信息">
         <div className="profile-crest">
-          <img src="/assets/ui/libai-avatar.jpg" alt="青莲居士" />
+          <img src={LIBAI_AVATAR_URL} alt="青莲居士" />
           <div>
             <strong>青莲居士</strong>
             <span>入梦值 {progress}/2400</span>

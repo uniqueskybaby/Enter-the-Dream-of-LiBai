@@ -1,4 +1,5 @@
 import { BookOpen, CircleHelp, Gem, Moon, ScrollText, Settings } from 'lucide-react';
+import { publicAssetUrl } from '../lib/config';
 import type { PoemMeta, PlayerResources } from '../types/game';
 import type { PanelKind } from './InfoPanel';
 
@@ -13,6 +14,8 @@ function formatNum(n: number): string {
   return String(n);
 }
 
+const LIBAI_AVATAR_URL = publicAssetUrl('/assets/ui/libai-avatar.jpg');
+
 export function HudTopBar({ poem, onOpenPanel, resources }: HudTopBarProps) {
   const ml = resources ? formatNum(resources.moonlight) : '—';
   const sc = resources ? formatNum(resources.scroll) : '—';
@@ -21,7 +24,7 @@ export function HudTopBar({ poem, onOpenPanel, resources }: HudTopBarProps) {
   return (
     <header className="play-hud">
       <div className="play-hud__brand">
-        <img src="/assets/ui/libai-avatar.jpg" alt="李白" />
+        <img src={LIBAI_AVATAR_URL} alt="李白" />
         <div>
           <strong>青莲居士</strong>
           <span>{poem.source}</span>

@@ -44,6 +44,10 @@ function publicUrl(path: string): string {
   return `${base}${normalized.replace(/^\/+/, '')}${suffix}`;
 }
 
+export function publicAssetUrl(path: string): string {
+  return publicUrl(path);
+}
+
 function optimizedPublicImageUrl(path: string): string {
   if (!path || /^(https?:|data:|blob:|local:\/\/)/i.test(path)) return path;
   if (path.startsWith('./') || path.startsWith('../')) return path;
